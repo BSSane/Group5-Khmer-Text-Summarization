@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>សង្ខេបអត្ថបទខ្មែរ | Khmer Text Summarization</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header with gradient background -->
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fas fa-scroll"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>សង្ខេបអត្ថបទខ្មែរ</h1>
+                        <p>Khmer Text Summarization Tool</p>
+                    </div>
+                </div>
+                <div class="language-badge">
+                    <i class="fas fa-language"></i>
+                    <span>ភាសាខ្មែរ</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Main application area -->
+        <main class="app-container">
+            <!-- Input section -->
+            <section class="input-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-keyboard"></i> បញ្ចូលអត្ថបទខ្មែរ</h2>
+                    <p class="section-subtitle">បញ្ចូលអត្ថបទដែលអ្នកចង់សង្ខេបនៅទីនេះ</p>
+                </div>
+                
+                <div class="text-input-container">
+                    <div class="input-header">
+                        <label for="text">អត្ថបទដើម (Original Text)</label>
+                        <div class="char-count">
+                            <span id="charCount">0</span> តួអក្សរ
+                        </div>
+                    </div>
+                    <textarea 
+                        id="text" 
+                        rows="10" 
+                        placeholder="សូមបញ្ចូលអត្ថបទខ្មែររបស់អ្នកនៅទីនេះ... (Please enter your Khmer text here...)"></textarea>
+                </div>
+
+                <!-- Length controls -->
+                <div class="length-controls-section">
+                    <h3><i class="fas fa-ruler-combined"></i> ការកំណត់ប្រវែងសង្ខេប</h3>
+                    
+                    <div class="slider-controls">
+                        <div class="slider-item">
+                            <label for="min_length">
+                                <i class="fas fa-arrows-alt-h"></i> ប្រវែងអប្បបរមា (Min Length)
+                            </label>
+                            <div class="slider-with-value">
+                                <input type="range" id="min_length_slider" min="10" max="200" value="50" class="slider">
+                                <span class="slider-value" id="min_length_display">50</span>
+                            </div>
+                            <input type="number" id="min_length" value="50" min="10" max="200" class="number-input">
+                        </div>
+                        
+                        <div class="slider-item">
+                            <label for="max_length">
+                                <i class="fas fa-arrows-alt-h"></i> ប្រវែងអតិបរមា (Max Length)
+                            </label>
+                            <div class="slider-with-value">
+                                <input type="range" id="max_length_slider" min="50" max="500" value="150" class="slider">
+                                <span class="slider-value" id="max_length_display">150</span>
+                            </div>
+                            <input type="number" id="max_length" value="150" min="50" max="500" class="number-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="summarizeText()">
+                        <i class="fas fa-magic"></i> សង្ខេបអត្ថបទ (Summarize)
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearAll()">
+                        <i class="fas fa-broom"></i> សម្អាតទាំងអស់ (Clear All)
+                    </button>
+                    <button class="btn btn-help" onclick="showHelp()">
+                        <i class="fas fa-question-circle"></i> ជំនួយ (Help)
+                    </button>
+                </div>
+            </section>
+
+            <!-- Processing indicator -->
+            <div class="processing-section" id="spinner" style="display:none;">
+                <div class="processing-content">
+                    <div class="spinner-circle"></div>
+                    <h3>កំពុងសង្ខេបអត្ថបទ...</h3>
+                    <p>សូមរង់ចាំមួយភ្លែត យើងកំពុងដំណើរការអត្ថបទរបស់អ្នក</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error message -->
+            <div class="error-message" id="error" style="display:none;">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="error-content">
+                    <h3>មានបញ្ហាកើតឡើង</h3>
+                    <p id="error-text"></p>
+                </div>
+                <button class="error-close" onclick="closeError()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Output section -->
+            <section class="output-section" id="output" style="display:none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-file-contract"></i> លទ្ធផលសង្ខេប</h2>
+                    <p class="section-subtitle">សេចក្តីសង្ខេបនៃអត្ថបទរបស់អ្នកត្រូវបានរៀបចំរួចរាល់</p>
+                </div>
+                
+                <div class="summary-container">
+                    <div class="summary-header">
+                        <h3><i class="fas fa-scroll"></i> សេចក្តីសង្ខេប (Summary):</h3>
+                        <button class="btn-copy" onclick="copySummary()" title="ចម្លងសេចក្តីសង្ខេប">
+                            <i class="fas fa-copy"></i> ចម្លង (Copy)
+                        </button>
+                    </div>
+                    <div class="summary-box" id="summary">
+                        <!-- Summary will appear here -->
+                    </div>
+                    
+                    <!-- Statistics -->
+                    <div class="stats-container">
+                        <h3><i class="fas fa-chart-bar"></i> ស្ថិតិអត្ថបទ</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-text-width"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-label">ប្រវែងអត្ថបទដើម</span>
+                                    <span class="stat-value" id="origLen">0</span>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-compress"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-label">ប្រវែងសេចក្តីសង្ខេប</span>
+                                    <span class="stat-value" id="sumLen">0</span>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-label">ការបង្រួម</span>
+                                    <span class="stat-value" id="ratio">0%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <span class="stat-label">ពេលវេលាដំណើរការ</span>
+                                    <span class="stat-value" id="processTime">0s</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="output-actions">
+                        <button class="btn btn-secondary" onclick="downloadSummary()">
+                            <i class="fas fa-download"></i> ទាញយកសេចក្តីសង្ខេប
+                        </button>
+                        <button class="btn btn-primary" onclick="summarizeAgain()">
+                            <i class="fas fa-redo"></i> សង្ខេបម្តងទៀត
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Information panel -->
+        <aside class="info-panel">
+            <div class="info-card">
+                <div class="info-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>ព័ត៌មានអំពីកម្មវិធី</h3>
+                </div>
+                <div class="info-content">
+                    <p>កម្មវិធីនេះប្រើបច្ចេកវិទ្យា AI ដើម្បីសង្ខេបអត្ថបទភាសាខ្មែរដោយស្វ័យប្រវត្តិ។</p>
+                    
+                    <div class="info-tips">
+                        <h4><i class="fas fa-lightbulb"></i> គន្លឹះសម្រាប់ប្រើប្រាស់:</h4>
+                        <ul>
+                            <li>បញ្ចូលអត្ថបទយ៉ាងតិច ១០០ តួអក្សរសម្រាប់លទ្ធផលល្អ</li>
+                            <li>កំណត់ប្រវែងសង្ខេបតាមតម្រូវការរបស់អ្នក</li>
+                            <li>អ្នកអាចចម្លង ឬទាញយកលទ្ធផលបានភ្លាម</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="model-info">
+                        <h4><i class="fas fa-brain"></i> គំរូដែលប្រើ:</h4>
+                        <div class="model-tag">
+                            <span>mBART Model</span>
+                        </div>
+                        <div class="model-tag">
+                            <span>Transformers</span>
+                        </div>
+                        <div class="model-tag">
+                            <span>Python Backend</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-scroll"></i>
+                    <span>សង្ខេបអត្ថបទខ្មែរ</span>
+                </div>
+                <div class="footer-info">
+                    <p>Powered by Python & Transformers | mBART Model</p>
+                    <p class="copyright">© 2023 Khmer Text Summarization Tool. All rights reserved.</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#"><i class="fab fa-github"></i> GitHub</a>
+                    <a href="#"><i class="fas fa-book"></i> Documentation</a>
+                    <a href="#"><i class="fas fa-envelope"></i> Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Help modal (hidden by default) -->
+    <div class="modal-overlay" id="helpModal" style="display:none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-question-circle"></i> ជំនួយសម្រាប់ការប្រើប្រាស់</h2>
+                <button class="modal-close" onclick="closeHelp()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <p>កម្មវិធីសង្ខេបអត្ថបទខ្មែរនេះអាចជួយអ្នកក្នុងការសង្ខេបអត្ថបទវែងៗ ទៅជាអត្ថបទខ្លីដែលមានសេចក្តីខ្លឹមសារ។</p>
+                
+                <h3>ជំហានក្នុងការប្រើប្រាស់៖</h3>
+                <ol>
+                    <li>បញ្ចូលអត្ថបទខ្មែរដែលអ្នកចង់សង្ខេបទៅក្នុងប្រអប់អត្ថបទដើម</li>
+                    <li>កំណត់ប្រវែងអប្បបរមា និងអតិបរមានៃសេចក្តីសង្ខេបតាមតម្រូវការ</li>
+                    <li>ចុចប៊ូតុង "សង្ខេបអត្ថបទ" ដើម្បីចាប់ផ្តើមដំណើរការ</li>
+                    <li>រង់ចាំរយៈពេលខ្លីរហូតដល់លទ្ធផលត្រូវបានបង្ហាញ</li>
+                    <li>អ្នកអាចចម្លង ឬទាញយកលទ្ធផលបានភ្លាមៗ</li>
+                </ol>
+                
+                <h3>គន្លឹះសម្រាប់លទ្ធផលល្អ៖</h3>
+                <ul>
+                    <li>អត្ថបទដើមគួរមានយ៉ាងតិច ១០០ តួអក្សរ</li>
+                    <li>អត្ថបទដែលមានរចនាសម្ព័ន្ធច្បាស់លាស់នឹងផ្តល់លទ្ធផលល្អជាង</li>
+                    <li>កំណត់ប្រវែងសង្ខេបឱ្យសមរម្យជាមួយប្រវែងអត្ថបទដើម</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeHelp()">យល់ព្រម</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize character counter
+        document.getElementById('text').addEventListener('input', function() {
+            document.getElementById('charCount').textContent = this.value.length;
+        });
+        
+        // Sync sliders with number inputs
+        document.getElementById('min_length_slider').addEventListener('input', function() {
+            document.getElementById('min_length').value = this.value;
+            document.getElementById('min_length_display').textContent = this.value;
+        });
+        
+        document.getElementById('max_length_slider').addEventListener('input', function() {
+            document.getElementById('max_length').value = this.value;
+            document.getElementById('max_length_display').textContent = this.value;
+        });
+        
+        document.getElementById('min_length').addEventListener('input', function() {
+            const value = Math.min(Math.max(this.value, 10), 200);
+            document.getElementById('min_length_slider').value = value;
+            document.getElementById('min_length_display').textContent = value;
+        });
+        
+        document.getElementById('max_length').addEventListener('input', function() {
+            const value = Math.min(Math.max(this.value, 50), 500);
+            document.getElementById('max_length_slider').value = value;
+            document.getElementById('max_length_display').textContent = value;
+        });
+
+        // Main summarization function
+        async function summarizeText() {
+            const text = document.getElementById("text").value.trim();
+            const maxLen = document.getElementById("max_length").value;
+            const minLen = document.getElementById("min_length").value;
+
+            const spinner = document.getElementById("spinner");
+            const errorBox = document.getElementById("error");
+            const output = document.getElementById("output");
+
+            errorBox.style.display = "none";
+            output.style.display = "none";
+
+            if (text.length < 50) {
+                document.getElementById("error-text").textContent = "អត្ថបទខ្លីពេក។ សូមបញ្ចូលអត្ថបទយ៉ាងតិច ៥០ តួអក្សរ។ (Text too short. Please enter at least 50 characters.)";
+                errorBox.style.display = "flex";
+                return;
+            }
+
+            spinner.style.display = "block";
+            const startTime = Date.now();
+
+            try {
+                const response = await fetch("/api/summarize", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        text: text,
+                        max_length: parseInt(maxLen),
+                        min_length: parseInt(minLen)
+                    })
+                });
+
+                const data = await response.json();
+                const endTime = Date.now();
+                const processTime = ((endTime - startTime) / 1000).toFixed(2);
+
+                spinner.style.display = "none";
+
+                if (!response.ok) {
+                    throw new Error(data.error || "មានបញ្ហាកើតឡើងក្នុងអំឡុងពេលសង្ខេប (An error occurred during summarization)");
+                }
+
+                document.getElementById("summary").innerHTML = formatSummary(data.summary);
+                document.getElementById("origLen").textContent = data.original_length;
+                document.getElementById("sumLen").textContent = data.summary_length;
+                document.getElementById("processTime").textContent = processTime + "s";
+
+                const ratio = Math.round(
+                    (1 - data.summary_length / data.original_length) * 100
+                );
+                document.getElementById("ratio").textContent = ratio + "%";
+
+                output.style.display = "block";
+
+            } catch (err) {
+                spinner.style.display = "none";
+                document.getElementById("error-text").textContent = err.message;
+                errorBox.style.display = "flex";
+            }
+        }
+
+        // Helper function to format summary with proper line breaks
+        function formatSummary(text) {
+            return text.replace(/\n/g, '<br>');
+        }
+
+        function clearAll() {
+            document.getElementById("text").value = "";
+            document.getElementById("charCount").textContent = "0";
+            document.getElementById("output").style.display = "none";
+            document.getElementById("error").style.display = "none";
+        }
+
+        function closeError() {
+            document.getElementById("error").style.display = "none";
+        }
+
+        function copySummary() {
+            const text = document.getElementById("summary").innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                // Show temporary success message
+                const copyBtn = document.querySelector('.btn-copy');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> បានចម្លង!';
+                copyBtn.style.backgroundColor = '#2ecc71';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.style.backgroundColor = '';
+                }, 2000);
+            });
+        }
+
+        function showHelp() {
+            document.getElementById('helpModal').style.display = 'block';
+        }
+
+        function closeHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        function downloadSummary() {
+            const text = document.getElementById("summary").innerText;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'khmer-summary.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function summarizeAgain() {
+            // Scroll to top and focus on text input
+            document.getElementById('text').focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('helpModal');
+            if (event.target === modal) {
+                closeHelp();
+            }
+        });
+    </script>
+</body>
+</html>
